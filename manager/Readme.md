@@ -14,3 +14,5 @@ To set up the manager:
   $ sh hadoop-on-gce/scripts/installHadoopConf.sh
 
   $ sh hadoop-on-gce/datanode/install.sh
+
+TODO -> my.cnf
