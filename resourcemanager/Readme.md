@@ -9,4 +9,4 @@ To add a new worker on the cluster:
   $ sh hadoop-on-gce/scripts/installCDHrepo.sh
   $ sh hadoop-on-gce/scripts/installHadoopConf.sh
 
-  $ sh hadoop-on-gce/datanode/install.sh
+  $ sh hadoop-on-gce/resourcemanager/install.sh

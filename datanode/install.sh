@@ -9,9 +9,5 @@ chown -R hdfs:hdfs ${DATANODE_DIR}
 chmod 700 ${DATANODE_DIR}
 
 #
-# Format the namenode - datanode's data are invalidated
-# sudo -u hdfs hdfs namenode -format
-
-#
 # Start the service
 service hadoop-hdfs-datanode start

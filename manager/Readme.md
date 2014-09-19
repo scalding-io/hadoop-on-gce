@@ -1,7 +1,11 @@
-All the *worker* nodes act as both *DataNode* and *NodeManager*
+There is one *manager* role that runs:
 
-To add a new worker on the cluster:
------------------------------------
++ Cloudera Manager 
++ HBase Server
++ Impala Server ...
+
+To set up the manager:
+----------------------
 
   $ yum install -y git; git clone https://github.com/scalding-io/hadoop-on-gce.git
 
