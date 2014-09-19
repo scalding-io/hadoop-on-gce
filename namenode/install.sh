@@ -4,7 +4,7 @@ yum install -y hadoop-hdfs-namenode
 #
 # NAMENODE_DIR must match the value of 'dfs.namenode.name.dir' in 'hdfs-site.xml'
 #
-NAMENODE_DIR = /data/1/dfs/nn
+NAMENODE_DIR=/data/1/dfs/nn
 mkdir -p ${NAMENODE_DIR}
 chown -R hdfs:hdfs ${NAMENODE_DIR}
 chmod 700 ${NAMENODE_DIR}
