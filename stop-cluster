@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+## Leave them empty, set them in file 'cluster.conf'
+PROJECT=""
+ZONE=""
+NODES=""
+SSH_PUB_KEY=""
+
+source cluster.conf
+
+## Two color codes.
+SY=$'\x1b[33;1m'
+NC=$'\x1b[0m'
+
+## Poweroff the machines. We want them to have a clean shutdown if we are going to start them again. Also create a string with the node and route names to use later.
+echo "${SY}Powering off VMs.${NC}"
+for ((i=1; i<=$NODES; i++)); do
+    n="$(printf "%02d" $i)"
+    [[ $(gcloud compute instances list --project $PROJECT | grep node-$n) ]] && \
+        gcloud compute ssh root@node-$n --zone $ZONE --project $PROJECT --command 'poweroff'
+done
+
+## Wait for the instances to shutdown
+while (( $(gcloud compute instances list --project $PROJECT | grep -c TERMINATED) < $NODES )); do echo "Waiting for instances to complete shutdown..."; sleep 15; done
+
+## Delete the VMs but keep the boot disks.
+echo "${SY}Deleting VMs while preserving their disks.${NC}"
+for ((i=1; i<=$NODES; i++)); do
+    n="$(printf "%02d" $i)"
+    gcloud compute instances delete node-$n --zone $ZONE --keep-disks boot --quiet --project $PROJECT
+done

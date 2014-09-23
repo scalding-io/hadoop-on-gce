@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+## Leave them empty, set them in file 'cluster.conf'
+PROJECT=""
+ZONE=""
+NODES=""
+SSH_PUB_KEY=""
+MACHINE_TYPE=""
+DISK_SIZE=""
+
+WAIT_BETWEEN_REBOOTS="100"
+
+source cluster.conf
+
+## Two color codes.
+SY=$'\x1b[33;1m'
+NC=$'\x1b[0m'
+
+## Add a firewall rule to let access to Cloudera Web UI. Rule applies only to VMs with tag cdh.
+echo "${SY}Adding firewall rule to allow WebUI remote access.${NC}"
+[[ $(gcloud compute firewall-rules list --project $PROJECT | grep cloudera-manager) ]] && \
+    gcloud compute firewall-rules create cloudera-manager --allow tcp:7180 --target-tags cdh --project $PROJECT
+
+## Create nodes.
+echo "${SY}Creating VMs${NC}"
+echo "${SY}Number of nodes:${NC} $NODES"
+echo "${SY}Hard disks' size:${NC} $DISK_SIZE"
+for ((i=1; i<=$NODES; i++)); do
+    n="$(printf "%02d" $i)"
+    gcloud compute instances create node-$n \
+        --project $PROJECT \
+        --machine-type $MACHINE_TYPE \
+        --image debian-7-backports \
+        --zone $ZONE \
+        --network default \
+        --tags cdh \
+        --boot-disk-size $DISK_SIZE
+done
+
+## Wait for the machines to boot
+echo "${SY}Waiting for VMs to boot for $WAIT_BETWEEN_REBOOTS seconds.${NC}"
+sleep $WAIT_BETWEEN_REBOOTS
+
+## Install custom ssh keys, dnsutils, resize the root partition and reboot for the kernel to re-read the partition table, set custom ip, set custom fqdn (due to python issues), add hosts, set swapiness.
+echo "${SY}Resizing partitions, adding ssh keys, installing needed packages and rebooting VMs.${NC}"
+for ((i=1; i<=$NODES; i++)); do
+    n="$(printf "%02d" $i)"
+    gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "\
+sudo mkdir /root/.ssh; \
+echo $SSH_PUB_KEY | sudo tee -a /root/.ssh/authorized_keys; \
+sudo apt-get update; \
+sudo apt-get install -y dnsutils htop; \
+echo -e 'd\nn\np\n1\n4096\n\nw' | sudo /sbin/fdisk /dev/sda; \
+echo 'vm.swappiness = 0' | sudo tee -a /etc/sysctl.conf;\
+sudo /sbin/reboot;"
+done
+
+## Wait for machines to boot.
+echo "${SY}Waiting for VMs to reboot for $WAIT_BETWEEN_REBOOTS seconds.${NC}"
+sleep $WAIT_BETWEEN_REBOOTS
+
+## Resize filesystems to utilize all free space.
+echo "${SY}Resizing filesystems now that the kernels read the new partition tables.${NC}"
+for ((i=1; i<=$NODES; i++)); do
+    n="$(printf "%02d" $i)"
+    gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo /sbin/resize2fs /dev/sda1"
+done
+
+## Install cloudera manager on node-01.
+echo "${SY}Installing cloudera manager on node-01${NC}"
+gcloud compute ssh node-01 --zone $ZONE --project $PROJECT --command "sudo wget http://archive.cloudera.com/cm5/installer/latest/cloudera-manager-installer.bin && sudo chmod +x ./cloudera-manager-installer.bin"
+
+echo "${SY}Please run ${NC}sudo ./cloudera-manager-installer.bin${SY} to install cloudera-manager.${NC}"
+MASTER_IP="$(gcloud compute instances list --project $PROJECT | grep node-01 | awk '{print $5}')"
+echo "${SY}When finished, give it a couple minutes to start and visit${NC} http://$MASTER_IP:7180 ${SY}to install the cluster.${NC}"
+echo
+
+## Ssh to node-01. User will have to run cloudera manager installer manually the first time.
+gcloud compute ssh node-01 --zone $ZONE --project $PROJECT

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+## Leave them empty, set them in file 'cluster.conf'
+PROJECT=""
+ZONE=""
+NODES=""
+SSH_PUB_KEY=""
+MACHINE_TYPE=""
+
+source cluster.conf
+
+## Two color codes.
+SY=$'\x1b[33;1m'
+NC=$'\x1b[0m'
+
+## Create new VMs using the saved disk images.
+echo "${SY}Creating VMs with saved disk images.${NC}"
+for ((i=1; i<=$NODES; i++)); do
+    n="$(printf "%02d" $i)"
+    gcloud compute instances create node-$n \
+        --project $PROJECT \
+        --machine-type $MACHINE_TYPE \
+        --disk name=node-$n boot=yes \
+        --zone $ZONE \
+        --network default \
+        --can-ip-forward \
+        --tags cdh
+done
+
+MASTER_IP="$(gcloud compute instances list --project $PROJECT | grep node-01 | awk '{print $5}')"
+echo
+echo "${SY}The cluster is starting. Soon it will be available at${NC} http://$MASTER_IP:7180"
+echo "${SY}Once you login remember to restart the CM Monitor service, then wait a bit and restart the cluster.${NC}"
+echo

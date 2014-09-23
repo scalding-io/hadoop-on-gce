@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+## Leave them empty, set them in file 'cluster.conf'
+PROJECT=""
+ZONE=""
+NODES=""
+SSH_PUB_KEY=""
+
+source cluster.conf
+
+## Two color codes.
+SY=$'\x1b[33;1m'
+NC=$'\x1b[0m'
+
+## Delete the VMs but keep the boot disks.
+echo "${SY}Deleting any running VMs.${NC}"
+for ((i=1; i<=$NODES; i++)); do
+    n="$(printf "%02d" $i)"
+    [[ $(gcloud compute instances list --project $PROJECT | grep node-$n) ]] && \
+        gcloud compute instances delete node-$n --zone $ZONE --quiet --project $PROJECT
+done
+
+## Delete boot disks
+echo "${SY}Deleting remaining hard disks.${NC}"
+for ((i=1; i<=$NODES; i++)); do
+    n="$(printf "%02d" $i)"
+    [[ $(gcloud compute disks list --project $PROJECT | grep node-$n) ]] && \
+        gcloud compute disks delete node-$n --zone $ZONE --project $PROJECT --quiet
+done
+
+echo "${SY}Deleting firewall rules.${NC}"
+gcloud compute firewall-rules delete cloudera-manager --project $PROJECT --quiet
