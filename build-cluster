@@ -16,10 +16,11 @@ source cluster.conf
 SY=$'\x1b[33;1m'
 NC=$'\x1b[0m'
 
-## Add a firewall rule to let access to Cloudera Web UI. Rule applies only to VMs with tag cdh.
+## Add a firewall rule to let access to Cloudera Web UI (7180). Rule applies only to VMs with tag cdh.
+## Also permit access to 8888 for various Web UIs.
 echo "${SY}Adding firewall rule to allow WebUI remote access.${NC}"
 [[ $(gcloud compute firewall-rules list --project $PROJECT | grep cloudera-manager) ]] && \
-    gcloud compute firewall-rules create cloudera-manager --allow tcp:7180 --target-tags cdh --project $PROJECT
+    gcloud compute firewall-rules create cloudera-manager --allow tcp:7180 tcp:8888 --target-tags cdh --project $PROJECT
 
 ## Create nodes.
 echo "${SY}Creating VMs${NC}"
