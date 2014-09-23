@@ -17,7 +17,7 @@ echo "${SY}Powering off VMs.${NC}"
 for ((i=1; i<=$NODES; i++)); do
     n="$(printf "%02d" $i)"
     [[ $(gcloud compute instances list --project $PROJECT | grep node-$n) ]] && \
-        gcloud compute ssh root@node-$n --zone $ZONE --project $PROJECT --command 'poweroff'
+        gcloud compute ssh root@node-$n --zone $ZONE --project $PROJECT --ssh-flag "-o StrictHostKeyChecking=no" --command 'poweroff'
 done
 
 ## Wait for the instances to shutdown
