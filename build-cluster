@@ -42,19 +42,33 @@ done
 echo "${SY}Waiting for VMs to boot for $WAIT_BETWEEN_REBOOTS seconds.${NC}"
 sleep $WAIT_BETWEEN_REBOOTS
 
-## Install custom ssh keys, dnsutils, resize the root partition and reboot for the kernel to re-read the partition table, set custom ip, set custom fqdn (due to python issues), add hosts, set swapiness.
+## Create a ssh key to use for communication between hosts.
+SSH_TEMPFILE="$(mktemp)"
+ssh-keygen -n "root@cluster" -N "" -f "${SSH_TEMPFILE}.key"
+
+## Install custom ssh keys, dnsutils, resize the root partition and reboot for the kernel to re-read the partition table, set swapiness, disable strict host checking between our nodes.
 echo "${SY}Resizing partitions, adding ssh keys, installing needed packages and rebooting VMs.${NC}"
 for ((i=1; i<=$NODES; i++)); do
     n="$(printf "%02d" $i)"
+
+    # The ssh public key installed in this command is to be used by Cloudera Manager
     gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "\
 sudo mkdir /root/.ssh; \
 echo $SSH_PUB_KEY | sudo tee -a /root/.ssh/authorized_keys; \
+echo -e 'Host node-*\n  StrictHostKeyChecking no' | sudo tee -a /root/.ssh/config; \
 sudo apt-get update; \
 sudo apt-get install -y dnsutils htop; \
 echo -e 'd\nn\np\n1\n4096\n\nw' | sudo /sbin/fdisk /dev/sda; \
 echo 'vm.swappiness = 0' | sudo tee -a /etc/sysctl.conf;\
 sudo /sbin/reboot;"
+
+    # The ssh pubilc and private keys installed here are to be used by users who are already ssh'd into one of the nodes.
+    cat "${SSH_TEMPFILE}.key" | gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo tee -a /root/.ssh/id_rsa; sudo chmod 600 /root/.ssh/id_rsa"
+    cat "${SSH_TEMPFILE}.key.pub" | gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo tee -a /root/.ssh/authorized_keys"
 done
+
+# Delete ssh key file.
+rm "${SSH_TEMPFILE}" "${SSH_TEMPFILE}.key" "${SSH_TEMPFILE}.key.pub"
 
 ## Wait for machines to boot.
 echo "${SY}Waiting for VMs to reboot for $WAIT_BETWEEN_REBOOTS seconds.${NC}"
