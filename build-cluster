@@ -20,12 +20,13 @@ NC=$'\x1b[0m'
 ## Also permit access to 8888 for various Web UIs.
 echo "${SY}Adding firewall rule to allow WebUI remote access.${NC}"
 [[ $(gcloud compute firewall-rules list --project $PROJECT | grep cloudera-manager) ]] && \
-    gcloud compute firewall-rules create cloudera-manager --allow tcp:7180 tcp:8888 --target-tags cdh --project $PROJECT
+    gcloud compute firewall-rules create cloudera-manager --allow tcp:7180 tcp:8888 tcp:18080 tcp:18088 tcp:8080 tcp:8088 --target-tags cdh --project $PROJECT
 
 ## Create nodes.
 echo "${SY}Creating VMs${NC}"
 echo "${SY}Number of nodes:${NC} $NODES"
 echo "${SY}Hard disks' size:${NC} $DISK_SIZE"
+echo "" > hosts.txt
 for ((i=1; i<=$NODES; i++)); do
     n="$(printf "%02d" $i)"
     gcloud compute instances create node-$n \
@@ -36,8 +37,10 @@ for ((i=1; i<=$NODES; i++)); do
         --network default \
         --tags cdh \
         --boot-disk-size $DISK_SIZE
+    echo "node-$n" >> hosts.txt
 done
 
+ALL_HOSTS=$(cat hosts.txt)
 ## Wait for the machines to boot
 echo "${SY}Waiting for VMs to boot for $WAIT_BETWEEN_REBOOTS seconds.${NC}"
 sleep $WAIT_BETWEEN_REBOOTS
@@ -50,7 +53,7 @@ for ((i=1; i<=$NODES; i++)); do
 sudo mkdir /root/.ssh; \
 echo $SSH_PUB_KEY | sudo tee -a /root/.ssh/authorized_keys; \
 sudo apt-get update; \
-sudo apt-get install -y dnsutils htop; \
+sudo apt-get install -y dnsutils htop pssh; \
 echo -e 'd\nn\np\n1\n4096\n\nw' | sudo /sbin/fdisk /dev/sda; \
 echo 'vm.swappiness = 0' | sudo tee -a /etc/sysctl.conf;\
 sudo /sbin/reboot;"
@@ -70,6 +73,8 @@ done
 ## Install cloudera manager on node-01.
 echo "${SY}Installing cloudera manager on node-01${NC}"
 gcloud compute ssh node-01 --zone $ZONE --project $PROJECT --command "sudo wget http://archive.cloudera.com/cm5/installer/latest/cloudera-manager-installer.bin && sudo chmod +x ./cloudera-manager-installer.bin"
+gcloud compute copy-files hosts.txt node-01:~ --zone $ZONE
+gcloud compute copy-files scripts/* node-01:~ --zone $ZONE
 
 echo "${SY}Please run ${NC}sudo ./cloudera-manager-installer.bin${SY} to install cloudera-manager.${NC}"
 MASTER_IP="$(gcloud compute instances list --project $PROJECT | grep node-01 | awk '{print $5}')"
