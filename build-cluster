@@ -90,8 +90,8 @@ done
 ## Install cloudera manager on node-01.
 echo "${SY}Installing cloudera manager on node-01${NC}"
 gcloud compute ssh node-01 --zone $ZONE --project $PROJECT --command "sudo wget http://archive.cloudera.com/cm5/installer/latest/cloudera-manager-installer.bin && sudo chmod +x ./cloudera-manager-installer.bin"
-gcloud compute copy-files hosts.txt node-01:~ --zone $ZONE
-gcloud compute copy-files scripts/* node-01:~ --zone $ZONE
+gcloud compute copy-files hosts.txt node-01:~ --zone $ZONE --project $PROJECT
+gcloud compute copy-files scripts/* node-01:~ --zone $ZONE --project $PROJECT
 
 echo "${SY}Please run ${NC}sudo ./cloudera-manager-installer.bin${SY} to install cloudera-manager.${NC}"
 MASTER_IP="$(gcloud compute instances list --project $PROJECT | grep node-01 | awk '{print $5}')"
