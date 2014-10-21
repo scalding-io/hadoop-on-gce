@@ -69,6 +69,7 @@ echo $SSH_PUB_KEY | sudo tee -a /root/.ssh/authorized_keys; \
 echo -e 'Host node-*\n  StrictHostKeyChecking no' | sudo tee -a /root/.ssh/config; \
 echo -e 'd\nn\np\n1\n17\n\nw' | sudo /sbin/fdisk /dev/sda; \
 echo 'vm.swappiness = 0' | sudo tee -a /etc/sysctl.conf; \
+sudo sed -e 's/SELINUX=enforcing/SELINUX=disabled/' -i /etc/sysconfig/selinux /etc/selinux/config; \
 sudo /sbin/reboot;"
 done
 
