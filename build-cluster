@@ -59,12 +59,13 @@ for ((i=1; i<=$NODES; i++)); do
     gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo sed -e 's/PermitRootLogin no/PermitRootLogin yes/' -i /etc/ssh/sshd_config; sudo service sshd restart"
 
     # The ssh pubilc and private keys installed here are to be used by users who are already ssh'd into one of the nodes.
+    gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo mkdir /root/.ssh/"
+    echo "Teeing SSH keys"
     cat "${SSH_TEMPFILE}.key" | gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo tee -a /root/.ssh/id_rsa; sudo chmod 600 /root/.ssh/id_rsa"
     cat "${SSH_TEMPFILE}.key.pub" | gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo tee -a /root/.ssh/authorized_keys"
 
     # The ssh public key installed in this command is to be used by Cloudera Manager
     gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "\
-sudo mkdir /root/.ssh; \
 echo $SSH_PUB_KEY | sudo tee -a /root/.ssh/authorized_keys; \
 echo -e 'Host node-*\n  StrictHostKeyChecking no' | sudo tee -a /root/.ssh/config; \
 echo -e 'd\nn\np\n1\n17\n\nw' | sudo /sbin/fdisk /dev/sda; \
