@@ -8,7 +8,7 @@ SSH_PUB_KEY=""
 MACHINE_TYPE=""
 DISK_SIZE=""
 
-WAIT_BETWEEN_REBOOTS="100"
+WAIT_BETWEEN_REBOOTS="120"
 WAIT_LIST=""
 
 source cluster.conf
@@ -62,7 +62,7 @@ for ((i=1; i<=$NODES; i++)); do
         n="$(printf "%02d" $i)"
 
         # These commands disable tty requisite for sudo for centos-6 and redhat distributions. Also it permits root login —due to the nature of our setup it is ok.
-        gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --ssh-flag="-tt" --command "sudo sed -e 's/\(Defaults.*requiretty\)/#\1/' -i /etc/sudoers"
+        gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --ssh-flag="-tt" --ssh-flag "-o ConnectTimeout=360" --command "sudo sed -e 's/\(Defaults.*requiretty\)/#\1/' -i /etc/sudoers"
         gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "\
 sudo sed -e 's/PermitRootLogin no/PermitRootLogin yes/' -i /etc/ssh/sshd_config; \
 sudo service sshd restart; \
@@ -102,7 +102,7 @@ echo "${SY}Resizing filesystems now that the kernels read the new partition tabl
 for ((i=1; i<=$NODES; i++)); do
     (
         n="$(printf "%02d" $i)"
-        gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo /sbin/resize2fs /dev/sda1"
+        gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --ssh-flag "-o ConnectTimeout=360" --command "sudo /sbin/resize2fs /dev/sda1"
     ) &
     WAIT_LIST="$WAIT_LIST $!"
 done
@@ -112,8 +112,7 @@ WAIT_LIST=""
 ## Install cloudera manager on node-01.
 echo "${SY}Installing cloudera manager on node-01${NC}"
 gcloud compute ssh node-01 --zone $ZONE --project $PROJECT --command "sudo wget http://archive.cloudera.com/cm5/installer/latest/cloudera-manager-installer.bin && sudo chmod +x ./cloudera-manager-installer.bin"
-gcloud compute copy-files hosts.txt node-01:~ --zone $ZONE --project $PROJECT
-gcloud compute copy-files scripts/* node-01:~ --zone $ZONE --project $PROJECT
+gcloud compute copy-files hosts.txt scripts/* node-01:~ --zone $ZONE --project $PROJECT
 
 echo "${SY}Please run ${NC}sudo ./cloudera-manager-installer.bin${SY} to install cloudera-manager.${NC}"
 MASTER_IP="$(gcloud compute instances list --project $PROJECT | grep node-01 | awk '{print $5}')"
