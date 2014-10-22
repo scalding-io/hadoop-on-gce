@@ -2,7 +2,7 @@
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/scalding-io/hadoop-on-gce?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Repository for deploying a multi-node CDH 5.1.3 cluster on GCE.
-Currently it uses homogeneous instances but this will change in the feature.
+Currently it uses homogeneous instances but this will change in the future.
 Instances' settings are inside `cluster.conf`. Please remember to create your own ssh key with `ssh-keygen` before running `build-cluster`.
 You may choose which services you need during the cluster setup.
 

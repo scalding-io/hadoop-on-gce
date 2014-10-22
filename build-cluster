@@ -54,12 +54,14 @@ echo "${SY}Resizing partitions, adding ssh keys, installing needed packages and 
 for ((i=1; i<=$NODES; i++)); do
     n="$(printf "%02d" $i)"
 
-    # This commands disable tty requisite for sudo for centos-6 and redhat distributions. Also it permits root login (due to the nature of our setup it is ok).
+    # These commands disable tty requisite for sudo for centos-6 and redhat distributions. Also it permits root login —due to the nature of our setup it is ok.
     gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --ssh-flag="-tt" --command "sudo sed -e 's/\(Defaults.*requiretty\)/#\1/' -i /etc/sudoers"
-    gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo sed -e 's/PermitRootLogin no/PermitRootLogin yes/' -i /etc/ssh/sshd_config; sudo service sshd restart"
+    gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "\
+sudo sed -e 's/PermitRootLogin no/PermitRootLogin yes/' -i /etc/ssh/sshd_config; \
+sudo service sshd restart; \
+sudo mkdir /root/.ssh/;"
 
-    # The ssh pubilc and private keys installed here are to be used by users who are already ssh'd into one of the nodes.
-    gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo mkdir /root/.ssh/"
+    # The ssh public and private keys installed here are to be used by users who are already ssh'd into one of the nodes.
     echo "Teeing SSH keys"
     cat "${SSH_TEMPFILE}.key" | gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo tee -a /root/.ssh/id_rsa; sudo chmod 600 /root/.ssh/id_rsa"
     cat "${SSH_TEMPFILE}.key.pub" | gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "sudo tee -a /root/.ssh/authorized_keys"
@@ -68,9 +70,11 @@ for ((i=1; i<=$NODES; i++)); do
     gcloud compute ssh node-$n --zone $ZONE --project $PROJECT --command "\
 echo $SSH_PUB_KEY | sudo tee -a /root/.ssh/authorized_keys; \
 echo -e 'Host node-*\n  StrictHostKeyChecking no' | sudo tee -a /root/.ssh/config; \
-echo -e 'd\nn\np\n1\n17\n\nw' | sudo /sbin/fdisk /dev/sda; \
+sudo yum install -y http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm; \
+sudo yum install -y htop nload pssh iftop; \
 echo 'vm.swappiness = 0' | sudo tee -a /etc/sysctl.conf; \
 sudo sed -e 's/SELINUX=enforcing/SELINUX=disabled/' -i /etc/sysconfig/selinux /etc/selinux/config; \
+echo -e 'd\nn\np\n1\n17\n\nw' | sudo /sbin/fdisk /dev/sda; \
 sudo /sbin/reboot;"
 done
 
