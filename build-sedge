@@ -27,6 +27,13 @@ gcloud compute instances create sedge-01 \
        --tags sedge \
        --scopes compute-rw storage-rw
 
+# Create and assign a static local IP (route) to be used by the internal DNS server.
+echo "${SY}Creating route for static local IP.${NC}"
+gcloud compute routes create ip-10-10-0-1 \
+       --next-hop-instance sedge-01 \
+       --next-hop-instance-zone $ZONE \
+       --destination-range 10.10.0.1/32
+
 # Create two disks for SEDGE to use:
 echo "${SY}Creatind two disks for data and docker.${NC}"
 ## This will be used for data (e.g jenkins)
@@ -78,13 +85,7 @@ gcloud compute ssh root@sedge-01 \
        --project $PROJECT \
        --command "\
 yum install -y http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm; \
-yum install -y tmux emacs vim git pssh htop nload docker-io pdns pdns-recursor btrfs-progs; \
-echo y | mkfs.ext4 -m 1 -L sedge-01-data-volume /dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-data-volume; \
-mkfs.btrfs -L sedge-01-docker-volume /dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-docker-volume; \
-mkdir -p /mnt/data; \
-echo '/dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-data-volume /mnt/data ext4 auto,defaults,relatime 1 2' >> /etc/fstab; \
-echo '/dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-docker-volume /var/lib/docker btrfs auto,defaults,relatime 1 2' >> /etc/fstab; \
-mount /mnt/data; \
-mount /var/lib/docker; \
-service docker start; \
-chkconfig --level 345 docker on;"
+yum install -y git; \
+cd /root; git clone https://github.com/scalding-io/hadoop-on-gce.git; \
+cd hadoop-on-gce; git checkout alternate-configuration; \
+/root/hadoop-on-gce/sedge.conf.d/boostrap; "

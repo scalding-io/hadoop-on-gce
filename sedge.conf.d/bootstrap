@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Install software
+yum install -y tmux emacs vim pssh htop nload docker-io pdns pdns-recursor btrfs-progs
+
+# Format disks
+echo y | mkfs.ext4 -m 1 -L sedge-01-data-volume /dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-data-volume
+mkfs.btrfs -L sedge-01-docker-volume /dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-docker-volume
+
+# Create needed directories. Add disks to fstab.
+mkdir -p /mnt/data
+echo '/dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-data-volume /mnt/data ext4 auto,defaults,relatime 1 2' >> /etc/fstab
+echo '/dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-docker-volume /var/lib/docker btrfs auto,defaults,relatime 1 2' >> /etc/fstab
+
+# Mount disks:
+mount /mnt/data
+mount /var/lib/docker
+
+# Add static local IP iface and enable it:
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cp "ifcfg-eth0:0" /etc/sysconfig/network-scripts/
+ifup eth0:0
+
+# Start docker:
+service docker start
+chkconfig --level 345 docker on

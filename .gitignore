@@ -2,3 +2,4 @@
 cluster-ssh-key
 cluster-ssh-key.pub
 hosts.txt
+*#

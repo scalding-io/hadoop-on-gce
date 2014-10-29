@@ -15,5 +15,6 @@ echo "${SY}Deleting remaining hard disks.${NC}"
 gcloud compute disks delete sedge-01-data-volume --zone $ZONE --project $PROJECT --quiet
 gcloud compute disks delete sedge-01-docker-volume --zone $ZONE --project $PROJECT --quiet
 
-echo "${SY}Deleting firewall rule.${NC}"
+echo "${SY}Deleting firewall rule and network route.${NC}"
 gcloud compute firewall-rules delete sedge --project $PROJECT --quiet
+gcloud compute routes delete ip-10-10-0-1 --project $PROJECT
