@@ -17,4 +17,4 @@ gcloud compute disks delete sedge-01-docker-volume --zone $ZONE --project $PROJE
 
 echo "${SY}Deleting firewall rule and network route.${NC}"
 gcloud compute firewall-rules delete sedge --project $PROJECT --quiet
-gcloud compute routes delete ip-10-10-0-1 --project $PROJECT
+gcloud compute routes delete ip-10-10-0-1 --project $PROJECT --quiet

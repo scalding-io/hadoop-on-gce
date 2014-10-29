@@ -88,4 +88,4 @@ yum install -y http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.no
 yum install -y git; \
 cd /root; git clone https://github.com/scalding-io/hadoop-on-gce.git; \
 cd hadoop-on-gce; git checkout alternate-configuration; \
-/root/hadoop-on-gce/sedge.conf.d/boostrap; "
+/root/hadoop-on-gce/sedge.conf.d/bootstrap; "
