@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+source cluster.conf
+
+## Two color codes.
+SY=$'\x1b[33;1m'
+NC=$'\x1b[0m'
+
+# Here we create a firewall rule for our SEDGE VM. It will feature a http(s) server and a DNS server:
+echo "${SY}Adding firewall rules.${NC}"
+[[ $(gcloud compute firewall-rules list --project $PROJECT | grep sedge) ]] && \
+    gcloud compute firewall-rules create sedge \
+           --allow tcp:80 tcp:443 tcp:53 udp:53 \
+           --target-tags sedge \
+           --project $PROJECT \
+           --description "Basic rules for sedge services"
+
+# Create SEDGE instance:
+echo "${SY}Creating sedge-01 VM.${NC}"
+gcloud compute instances create sedge-01 \
+       --project $PROJECT \
+       --machine-type $SEDGE_MACHINE_TYPE \
+       --image centos-6 \
+       --zone $ZONE \
+       --network default \
+       --can-ip-forward \
+       --tags sedge \
+       --scopes compute-rw storage-rw
+
+# Create two disks for SEDGE to use:
+echo "${SY}Creatind two disks for data and docker.${NC}"
+## This will be used for data (e.g jenkins)
+gcloud compute disks create sedge-01-data-volume \
+       --project $PROJECT \
+       --size 50GiB \
+       --zone $ZONE \
+       --quiet
+## This will be used for docker images:
+gcloud compute disks create sedge-01-docker-volume \
+       --project $PROJECT \
+       --size 50GiB \
+       --zone $ZONE \
+       --quiet
+
+# Attach disks to SEDGE:
+echo "${SY}Attaching disks to sedge-01.${NC}"
+gcloud compute instances attach-disk sedge-01 \
+       --disk sedge-01-data-volume \
+       --device-name sedge-01-data-volume \
+       --project $PROJECT \
+       --zone $ZONE
+gcloud compute instances attach-disk sedge-01 \
+       --disk sedge-01-docker-volume \
+       --device-name sedge-01-docker-volume \
+       --project $PROJECT \
+       --zone $ZONE
+
+# Prepare SEDGE.
+echo "${SY}Preparing sedge-01. Installing apps, creating filesystems, etc.${NC}"
+## First we lift CentOS' restrictions to ssh logins and non-interactive sudos:
+gcloud compute ssh sedge-01 \
+       --zone $ZONE \
+       --project $PROJECT \
+       --ssh-flag="-tt" \
+       --ssh-flag "-o ConnectTimeout=360" \
+       --command "sudo sed -e 's/\(Defaults.*requiretty\)/#\1/' -i /etc/sudoers"
+gcloud compute ssh sedge-01 \
+       --zone $ZONE \
+       --project $PROJECT \
+       --command "\
+sudo sed -e 's/PermitRootLogin no/PermitRootLogin yes/' -i /etc/ssh/sshd_config; \
+sudo service sshd restart; \
+sudo mkdir /root/.ssh/;"
+
+## Now let's format our disks, install and configure our software:
+gcloud compute ssh root@sedge-01 \
+       --zone $ZONE \
+       --project $PROJECT \
+       --command "\
+yum install -y http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm; \
+yum install -y tmux emacs vim git pssh htop nload docker-io pdns pdns-recursor btrfs-progs; \
+echo y | mkfs.ext4 -m 1 -L sedge-01-data-volume /dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-data-volume; \
+mkfs.btrfs -L sedge-01-docker-volume /dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-docker-volume; \
+mkdir -p /mnt/data; \
+echo '/dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-data-volume /mnt/data ext4 auto,defaults,relatime 1 2' >> /etc/fstab; \
+echo '/dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-docker-volume /var/lib/docker btrfs auto,defaults,relatime 1 2' >> /etc/fstab; \
+mount /mnt/data; \
+mount /var/lib/docker; \
+service docker start; \
+chkconfig --level 345 docker on; \"

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source cluster.conf
+
+## Two color codes.
+SY=$'\x1b[33;1m'
+NC=$'\x1b[0m'
+
+## Delete sedge.
+echo "${SY}Deleting sedge-01.${NC}"
+gcloud compute instances delete sedge-01 --zone $ZONE --quiet --project $PROJECT
+
+## Delete data and docker disks
+echo "${SY}Deleting remaining hard disks.${NC}"
+gcloud compute disks delete sedge-01-data-volume --zone $ZONE --project $PROJECT --quiet
+gcloud compute disks delete sedge-01-docker-volume --zone $ZONE --project $PROJECT --quiet
+
+echo "${SY}Deleting firewall rule.${NC}"
+gcloud compute firewall-rules delete sedge --project $PROJECT --quiet
