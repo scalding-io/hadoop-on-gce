@@ -8,7 +8,7 @@ NC=$'\x1b[0m'
 
 # Here we create a firewall rule for our SEDGE VM. It will feature a http(s) server and a DNS server:
 echo "${SY}Adding firewall rules.${NC}"
-[[ $(gcloud compute firewall-rules list --project $PROJECT | grep sedge) ]] && \
+[[ $(gcloud compute firewall-rules list --project $PROJECT | grep sedge) ]] || \
     gcloud compute firewall-rules create sedge \
            --allow tcp:80 tcp:443 tcp:53 udp:53 \
            --target-tags sedge \
@@ -87,4 +87,4 @@ echo '/dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-docker-volume /var/li
 mount /mnt/data; \
 mount /var/lib/docker; \
 service docker start; \
-chkconfig --level 345 docker on; \"
+chkconfig --level 345 docker on;"
