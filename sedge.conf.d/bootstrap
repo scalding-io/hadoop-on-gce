@@ -17,8 +17,8 @@ mount /mnt/data
 mount /var/lib/docker
 
 # Add static local IP iface and enable it:
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cp "ifcfg-eth0:0" /etc/sysconfig/network-scripts/
+SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cp "$SCRIPT_PATH/ifcfg-eth0:0" /etc/sysconfig/network-scripts/
 ifup eth0:0
 
 # Start docker:
