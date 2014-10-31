@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
+SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+source "$SCRIPT_PATH/cluster.conf"
+
 # Install software
-yum install -y tmux emacs vim pssh htop nload docker-io pdns pdns-recursor btrfs-progs
+yum install -y tmux emacs vim pssh htop nload docker-io btrfs-progs
+yum install -y http://rnd.rajven.net/centos/6.5/os/x86_64/dnsmasq-2.68-1.x86_64.rpm
 
 # Format disks
 echo y | mkfs.ext4 -m 1 -L sedge-01-data-volume /dev/disk/by-id/scsi-0Google_PersistentDisk_sedge-01-data-volume
@@ -17,10 +22,22 @@ mount /mnt/data
 mount /var/lib/docker
 
 # Add static local IP iface and enable it:
-SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 cp "$SCRIPT_PATH/ifcfg-eth0:0" /etc/sysconfig/network-scripts/
 ifup eth0:0
 
 # Start docker:
 service docker start
 chkconfig --level 345 docker on
+
+# Configure dnsmasq
+touch /etc/dnsmasq_{local,public}_hosts
+cp "$SCRIPT_PATH/dnsmasq.{local,puclic}.conf" /etc
+
+dnsmasq -y -C /etc/dnsmasq.public.conf
+dnsmasq -y -C /etc/dnsmasq.local.conf
+
+localIP="$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip")"
+external="$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")"
+
+# killall -HUP dnsmasq
