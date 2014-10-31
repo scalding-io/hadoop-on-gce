@@ -24,7 +24,7 @@ for ((i=1; i<=$NODES; i++)); do
         ext_IP="$($GCLOUD compute instances describe node-$n --zone $ZONE | grep natIP | awk '{print $2}')"
 
         echo "$int_IP node-$n.cluster.30ohm.com" >> /etc/dnsmasq_local_hosts
-        echo "$ext_IP node-$n.cluster.30ohm.com" >> /etc/dnsmasq_public_hosts
+        echo "$ext_IP node-$n.cluster.30ohm.com node-$n" >> /etc/dnsmasq_public_hosts
 done
 
 # Ask dnsmasq to reload host files.

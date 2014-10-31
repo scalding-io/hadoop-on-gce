@@ -89,6 +89,7 @@ cd hadoop-on-gce; git checkout alternate-configuration; \
 sudo cp cluster.conf.d/custom_dns /etc/init.d/; \
 sudo chmod +x /etc/init.d/custom_dns; \
 sudo chkconfig --level 345 custom_dns on; \
+sudo rm /usr/share/google/set-hostname; \
 echo -e 'd\nn\np\n1\n17\n\nw' | sudo /sbin/fdisk /dev/sda; \
 sudo /sbin/reboot;"
     ) &
