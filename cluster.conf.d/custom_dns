@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+# custom_dns Set custom hostname and DNS
+#
+# chkconfig: 345 99 10
+# description: Set custom hostname and DNS, added by Marios @ scalding.io
+#
+### BEGIN INIT INFO
+# Provides: $custom_dns
+# Short-Description: Set FQDN and DNS
+# Description: Set FQDN and DNS
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+start() {
+    echo -n "Setting hostname and DNS: "
+    echo 'nameserver 10.10.0.1' > /etc/resolv.conf
+    sed -e 's/c\..*\.internal/cluster.30ohm.com/' -i /etc/hosts
+    return 0
+}
+
+stop() {
+    return 0
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        echo "Nothing to report."
+        ;;
+    restart|reload)
+        start
+        ;;
+    *)
+        echo "Usage: <servicename> {start|stop|restart}"
+        exit 1
+        ;;
+esac
+exit $?

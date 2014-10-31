@@ -1,0 +1,28 @@
+# Project Settings
+PROJECT="mystic-gradient-704"
+ZONE="us-central1-b"
+
+# Masters Configuration
+MASTERS_POPULATION=2
+MASTERS_MACHINE_TYPE="n1-standard-2"
+MASTERS_BOOTDISK_CAPACITY="25GiB"
+MASTERS_EXTRA_DISKS="0"
+
+# Nodes Configuration
+NODES_POPULATION=16
+NODES_MACHINE_TYPE="n1-standard-2"
+NODES_BOOTDISK_CAPACITY="25GiB"
+NODES_EXTRA_DISKS="6"
+NODES_EXTRA_DISKS_CAPACITY="1TiB"
+
+# Edges Configuration
+EDGES_POPULATION=2
+EDGES_MACHINE_TYPE="n1-standard-2"
+EDGES_BOOTDISK_CAPACITY="25GiB"
+EDGES_EXTRA_DISKS="0"
+
+# Sedge Configuration (this is a completely different machine)
+SEDGE_MACHINE_TYPE="g1-small"
+
+# Other settings
+SSH_PUB_KEY="$(cat cluster-ssh-key.pub)"
