@@ -8,12 +8,11 @@ NC=$'\x1b[0m'
 
 # Here we create a firewall rule for our SEDGE VM. It will feature a http(s) server and a DNS server:
 echo "${SY}Adding firewall rules.${NC}"
-[[ $(gcloud compute firewall-rules list --project $PROJECT | grep sedge) ]] || \
-    gcloud compute firewall-rules create sedge \
-           --allow tcp:80 tcp:443 tcp:53 udp:53 \
-           --target-tags sedge \
-           --project $PROJECT \
-           --description "Basic rules for sedge services"
+gcloud compute firewall-rules create sedge \
+       --allow tcp:80 tcp:443 tcp:53 udp:53 \
+       --target-tags sedge \
+       --project $PROJECT \
+       --description "Basic rules for sedge services"
 
 # Create SEDGE instance:
 echo "${SY}Creating sedge-01 VM.${NC}"
@@ -32,7 +31,8 @@ echo "${SY}Creating route for static local IP.${NC}"
 gcloud compute routes create ip-10-10-0-1 \
        --next-hop-instance sedge-01 \
        --next-hop-instance-zone $ZONE \
-       --destination-range 10.10.0.1/32
+       --destination-range 10.10.0.1/32 \
+       --project $PROJECT
 
 # Create two disks for SEDGE to use:
 echo "${SY}Creatind two disks for data and docker.${NC}"
