@@ -36,8 +36,3 @@ cp "$SCRIPT_PATH/dnsmasq.{local,puclic}.conf" /etc
 
 dnsmasq -y -C /etc/dnsmasq.public.conf
 dnsmasq -y -C /etc/dnsmasq.local.conf
-
-localIP="$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip")"
-external="$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")"
-
-# killall -HUP dnsmasq

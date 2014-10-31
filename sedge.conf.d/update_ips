@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+GCLOUD="/usr/local/bin/gcloud"
+
+source ../cluster.conf
+
+## Two color codes.
+SY=$'\x1b[33;1m'
+NC=$'\x1b[0m'
+
+# Flush our current configuration:
+echo > /etc/dnsmasq_local_hosts
+echo > /etc/dnsmasq_public_hosts
+
+# Add new IPs
+echo "${SY}Adding IPs${NC}"
+echo "$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip") sedge-01.cluster.30ohm.com cluster.30ohm.com sedge.30ohm.com" >> /etc/dnsmasq_local_hosts
+echo "$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip") sedge-01.cluster.30ohm.com" >> /etc/dnsmasq_public_hosts
+
+for ((i=1; i<=$NODES; i++)); do
+        n="$(printf "%02d" $i)"
+
+        int_IP="$($GCLOUD compute instances describe node-$n --zone $ZONE | grep networkIP | awk '{print $2}')"
+        ext_IP="$($GCLOUD compute instances describe node-$n --zone $ZONE | grep natIP | awk '{print $2}')"
+
+        echo "$int_IP node-$n.cluster.30ohm.com" >> /etc/dnsmasq_local_hosts
+        echo "$ext_IP node-$n.cluster.30ohm.com" >> /etc/dnsmasq_public_hosts
+done
+
+# Ask dnsmasq to reload host files.
+killall -HUP dnsmasq
