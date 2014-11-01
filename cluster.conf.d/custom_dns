@@ -16,10 +16,12 @@
 
 start() {
     echo -n "Setting hostname and DNS: "
-    echo 'domain cluster.30ohm.com' > /etc/resolv.conf
-    echo 'nameserver 10.10.0.1' >> /etc/resolv.conf
-    sed -e 's/c\..*\.internal/cluster.30ohm.com/' -i /etc/hosts
+    echo 'nameserver 10.10.0.1' > /etc/resolv.conf
     CUR_HNAME="$(hostname | sed -e 's/\..*//')"
+    CUR_IP="$(hostname -I)"
+    sed -i '/Google/d' /etc/hosts
+    sed -i '/'$CUR_HNAME'/d' /etc/hosts
+    echo "$CUR_IP $CUR_HNAME.cluster.30ohm.com $CUR_HNAME" >> /etc/hosts
     hostname $CUR_HNAME.cluster.30ohm.com
     return 0
 }
