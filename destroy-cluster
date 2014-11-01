@@ -12,21 +12,34 @@ source cluster.conf
 SY=$'\x1b[33;1m'
 NC=$'\x1b[0m'
 
+WAIT_LIST=""
+
 ## Delete the VMs but keep the boot disks.
 echo "${SY}Deleting any running VMs.${NC}"
 for ((i=1; i<=$NODES; i++)); do
-    n="$(printf "%02d" $i)"
-    [[ $(gcloud compute instances list --project $PROJECT | grep node-$n) ]] && \
-        gcloud compute instances delete node-$n --zone $ZONE --quiet --project $PROJECT
+    (
+        n="$(printf "%02d" $i)"
+        [[ $(gcloud compute instances list --project $PROJECT | grep node-$n) ]] && \
+            gcloud compute instances delete node-$n --zone $ZONE --quiet --project $PROJECT
+    ) &
+    WAIT_LIST="$WAIT_LIST $!"
 done
+wait $WAIT_LIST
+WAIT_LIST=""
 
 ## Delete boot disks
 echo "${SY}Deleting remaining hard disks.${NC}"
 for ((i=1; i<=$NODES; i++)); do
-    n="$(printf "%02d" $i)"
-    [[ $(gcloud compute disks list --project $PROJECT | grep node-$n) ]] && \
-        gcloud compute disks delete node-$n --zone $ZONE --project $PROJECT --quiet
+    (
+        n="$(printf "%02d" $i)"
+        [[ $(gcloud compute disks list --project $PROJECT | grep node-$n) ]] && \
+            gcloud compute disks delete node-$n --zone $ZONE --project $PROJECT --quiet
+    ) &
+    WAIT_LIST="$WAIT_LIST $!"
 done
 
 echo "${SY}Deleting firewall rules.${NC}"
-gcloud compute firewall-rules delete cloudera-manager --project $PROJECT --quiet
+gcloud compute firewall-rules delete cloudera-manager --project $PROJECT --quiet &
+WAIT_LIST="$WAIT_LIST $!"
+
+wait $WAIT_LIST
