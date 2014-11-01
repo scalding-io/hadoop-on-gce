@@ -21,3 +21,5 @@ Start them again:
 Start `cloudera-scm-agent` on all machines:
 
     # /sbin/service cloudera-scm-agent start
+
+Also __after a reboot__ you may have to restart `cloudera-scm-agent` on all machines.
