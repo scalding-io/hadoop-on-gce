@@ -20,7 +20,7 @@ for ((i=1; i<=$NODES; i++)); do
     gcloud compute instances create node-$n \
         --project $PROJECT \
         --machine-type $MACHINE_TYPE \
-        --disk name=node-$n boot=yes \
+        --disk name=node-$n,boot=yes \
         --zone $ZONE \
         --network default \
         --can-ip-forward \
