@@ -82,7 +82,6 @@ sudo yum install -y htop nload pssh iftop tmux; \
 sudo yum remove -y epel-release; \
 echo 'vm.swappiness = 0' | sudo tee -a /etc/sysctl.conf; \
 sudo sed -e 's/SELINUX=enforcing/SELINUX=disabled/' -i /etc/sysconfig/selinux /etc/selinux/config; \
-echo -e 'd\nn\np\n1\n17\n\nw' | sudo /sbin/fdisk /dev/sda; \
 sudo /sbin/reboot;"
     ) &
     WAIT_LIST="$WAIT_LIST $!"
