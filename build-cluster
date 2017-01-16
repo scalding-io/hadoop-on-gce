@@ -21,7 +21,7 @@ NC=$'\x1b[0m'
 ## Also permit access to 8888 for various Web UIs.
 echo "${SY}Adding firewall rule to allow WebUI remote access.${NC}"
 [[ $(gcloud compute firewall-rules list --project $PROJECT | grep cloudera-manager) ]] && \
-    gcloud compute firewall-rules create cloudera-manager --allow tcp:7180 tcp:8888 tcp:18080 tcp:18088 tcp:8080 tcp:8088 --target-tags cdh --project $PROJECT
+    gcloud compute firewall-rules create cloudera-manager --allow tcp:7180,tcp:8888,tcp:18080,tcp:18088,tcp:8080,tcp:8088 --target-tags cdh --project $PROJECT
 
 ## Create nodes.
 echo "${SY}Creating VMs${NC}"
